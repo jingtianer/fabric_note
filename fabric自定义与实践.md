@@ -41,7 +41,7 @@ OrdererOrgs:
   # Orderer
   # ---------------------------------------------------------------------------
   - Name: Orderer
-    Domain: example.com
+    Domain: fedfab.com
     EnableNodeOUs: false
 
     # ---------------------------------------------------------------------------
@@ -59,7 +59,7 @@ PeerOrgs:
   # Org1
   # ---------------------------------------------------------------------------
   - Name: Org1
-    Domain: org1.example.com
+    Domain: org1.fedfab.com
     EnableNodeOUs: false #这里改为true
   Template:
     Count: 1 # 这里改为3.
@@ -79,7 +79,7 @@ PeerOrgs:
   # Org2: See "Org1" for full specification
   # ---------------------------------------------------------------------------
   - Name: Org2
-    Domain: org2.example.com
+    Domain: org2.fedfab.com
     EnableNodeOUs: false #改成true
     Template:
       Count: 1
@@ -93,12 +93,12 @@ cryptogen generate --config=crypto-config.yaml
 ```
 - 输出，并创建了证书文件
 ```sh
-org1.example.com
-org2.example.com
+org1.fedfab.com
+org2.fedfab.com
 ```
 - 进入一个组织查看
 ```sh
-tt@tt-HP:~/Desktop/fabric/my-network/nodes/crypto-config/peerOrganizations/org1.example.com$ ls
+tt@tt-HP:~/Desktop/fabric/my-network/nodes/crypto-config/peerOrganizations/org1.fedfab.com$ ls
 ca  msp  peers  tlsca  users
 ```
 
@@ -201,7 +201,9 @@ configtxgen -profile TwoOrgsOrdererGenesis -channelID system-channel -outputBloc
 
 ## 创建应用通道
 ```sh
-configtxgen -profile TwoOrgsChannel -outputCreateChannelTx ./channel-artifacts/channel1.tx -channelID channel1
+configtxgen -profile TwoOrgsChannel -outputCreateChannelTx ./channel-artifacts/channel2.tx -channelID channel2
+configtxgen -profile TwoOrgsChannel -outputAnchorPeersUpdate ./channel-artifacts/Org1MSPanchors.tx -channelID channel2 -asOrg Org1MSP
+configtxgen -profile TwoOrgsChannel -outputAnchorPeersUpdate ./channel-artifacts/Org2MSPanchors.tx -channelID channel2 -asOrg Org2MSP
 ```
 
 得到输出
@@ -217,8 +219,8 @@ configtxgen -profile TwoOrgsChannel -outputCreateChannelTx ./channel-artifacts/c
 - 在test-network的基础上进行修改
 ## 修改order节点
 ```yaml
-  orderer.example.com:
-    container_name: orderer.example.com
+  orderer.fedfab.com:
+    container_name: orderer.fedfab.com
     image: hyperledger/fabric-orderer:latest
     labels:
       service: hyperledger-fabric
@@ -246,15 +248,15 @@ configtxgen -profile TwoOrgsChannel -outputCreateChannelTx ./channel-artifacts/c
       - ORDERER_ADMIN_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       - ORDERER_ADMIN_TLS_CLIENTROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       - ORDERER_ADMIN_LISTENADDRESS=0.0.0.0:7053
-      - ORDERER_OPERATIONS_LISTENADDRESS=orderer.example.com:9443
+      - ORDERER_OPERATIONS_LISTENADDRESS=orderer.fedfab.com:9443
       - ORDERER_METRICS_PROVIDER=prometheus
     working_dir: /root
     command: orderer
     volumes:
-        - ../crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/msp:/var/hyperledger/orderer/msp
-        - ../crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/:/var/hyperledger/orderer/tls
+        - ../crypto-config/ordererOrganizations/fedfab.com/orderers/orderer.fedfab.com/msp:/var/hyperledger/orderer/msp
+        - ../crypto-config/ordererOrganizations/fedfab.com/orderers/orderer.fedfab.com/tls/:/var/hyperledger/orderer/tls
         - ../system-genesis-block/:/var/hyperledger/orderer/system-genesis-block #增加
-        - orderer.example.com:/var/hyperledger/production/orderer
+        - orderer.fedfab.com:/var/hyperledger/production/orderer
     ports:
       - 7050:7050
       - 7053:7053
@@ -270,16 +272,16 @@ configtxgen -profile TwoOrgsChannel -outputCreateChannelTx ./channel-artifacts/c
 
 ```yaml
 volumes:
-  orderer.example.com:
-  peer0.org1.example.com:
-  peer1.org1.example.com:
-  peer2.org1.example.com:
-  peer0.org2.example.com:
+  orderer.fedfab.com:
+  peer0.org1.fedfab.com:
+  peer1.org1.fedfab.com:
+  peer2.org1.fedfab.com:
+  peer0.org2.fedfab.com:
 ```
 - 增加org1中的节点配置，以下面的配置文件为模板
 ```yaml
-  peer0.org1.example.com: #修改
-    container_name: peer0.org1.example.com #修改
+  peer0.org1.fedfab.com: #修改
+    container_name: peer0.org1.fedfab.com #修改
     image: hyperledger/fabric-peer:latest
     labels:
       service: hyperledger-fabric
@@ -293,22 +295,22 @@ volumes:
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
       # Peer specific variables
-      - CORE_PEER_ID=peer0.org1.example.com #修改
-      - CORE_PEER_ADDRESS=peer0.org1.example.com:7051 #修改
+      - CORE_PEER_ID=peer0.org1.fedfab.com #修改
+      - CORE_PEER_ADDRESS=peer0.org1.fedfab.com:7051 #修改
       - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
-      - CORE_PEER_CHAINCODEADDRESS=peer0.org1.example.com:7052 #修改
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org1.fedfab.com:7052 #修改
       - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051 #修改
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.fedfab.com:7051 #修改
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.fedfab.com:7051
       - CORE_PEER_LOCALMSPID=Org1MSP
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-      - CORE_OPERATIONS_LISTENADDRESS=peer0.org1.example.com:9444 #修改
+      - CORE_OPERATIONS_LISTENADDRESS=peer0.org1.fedfab.com:9444 #修改
       - CORE_METRICS_PROVIDER=prometheus
       - CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG={"peername":"peer0org1"} #修改
       - CORE_CHAINCODE_EXECUTETIMEOUT=300s
     volumes:
-        - ../organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com:/etc/hyperledger/fabric #修改
-        - peer0.org1.example.com:/var/hyperledger/production #修改
+        - ../organizations/peerOrganizations/org1.fedfab.com/peers/peer0.org1.fedfab.com:/etc/hyperledger/fabric #修改
+        - peer0.org1.fedfab.com:/var/hyperledger/production #修改
     working_dir: /root
     command: peer node start
     ports:
@@ -323,11 +325,11 @@ volumes:
 ## 修改端口号
 |编号|端口配置|
 |-|-|
-|orderer.example.com|7050:7050, 7053:7053, 9443:9443|
-|peer0.org1.example.com|8051:7051, 9444:9444|
-|peer1.org1.example.com|8052:7051, 9445:9444|
-|peer2.org1.example.com|8053:7051, 9446:9444|
-|peer0.org2.example.com|9051:7051, 9447:9444|
+|orderer.fedfab.com|7050:7050, 7053:7053, 9443:9443|
+|peer0.org1.fedfab.com|8051:7051, 9444:9444|
+|peer1.org1.fedfab.com|8052:7051, 9445:9444|
+|peer2.org1.fedfab.com|8053:7051, 9446:9444|
+|peer0.org2.fedfab.com|9051:7051, 9447:9444|
 
 ## CLI（命令行接口）配置
 - 为每个节点创建一个cli
@@ -336,8 +338,8 @@ volumes:
 export FABRIC_CFG_PATH=$PWD/../config/
 export CORE_PEER_TLS_ENABLED=true
 export CORE_PEER_LOCALMSPID="Org1MSP"
-export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
-export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/org1.fedfab.com/peers/peer0.org1.fedfab.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/org1.fedfab.com/users/Admin@org1.fedfab.com/msp
 export CORE_PEER_ADDRESS=localhost:7051
 ```
 - 根据上述环境变量和test-network中的cli配置，编写四个节点的cli
@@ -357,11 +359,11 @@ export CORE_PEER_ADDRESS=localhost:7051
       - CORE_PEER_ID=cli1 #修改
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_LOCALMSPID=Org1MSP  #修改
-      - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.crt  #修改
-      - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.key  #修改
-      - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt  #修改
-      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp  #修改
-      - CORE_PEER_ADDRESS=peer0.org1.example.com:8051  #修改
+      - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.fedfab.com/peers/peer0.org1.fedfab.com/tls/server.crt  #修改
+      - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.fedfab.com/peers/peer0.org1.fedfab.com/tls/server.key  #修改
+      - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.fedfab.com/peers/peer0.org1.fedfab.com/tls/ca.crt  #修改
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.fedfab.com/users/Admin@org1.fedfab.com/msp  #修改
+      - CORE_PEER_ADDRESS=peer0.org1.fedfab.com:8051  #修改
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
     command: /bin/bash
     volumes:
@@ -372,7 +374,7 @@ export CORE_PEER_ADDRESS=localhost:7051
         - ../channel-artifacts:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts
         - ./docker/peercfg:/etc/hyperledger/peercfg
     depends_on:
-      - peer0.org1.example.com  #修改
+      - peer0.org1.fedfab.com  #修改
     networks:
       - test
 ```
@@ -384,16 +386,16 @@ docker-compose up -d
 得到输出
 ```sh
 Creating network "fabric_test" with the default driver
-Creating volume "compose_orderer.example.com" with default driver
-Creating volume "compose_peer0.org1.example.com" with default driver
-Creating volume "compose_peer1.org1.example.com" with default driver
-Creating volume "compose_peer2.org1.example.com" with default driver
-Creating volume "compose_peer0.org2.example.com" with default driver
-Creating peer0.org1.example.com ... done
-Creating peer0.org2.example.com ... done
-Creating peer1.org1.example.com ... done
-Creating peer2.org1.example.com ... done
-Creating orderer.example.com    ... done
+Creating volume "compose_orderer.fedfab.com" with default driver
+Creating volume "compose_peer0.org1.fedfab.com" with default driver
+Creating volume "compose_peer1.org1.fedfab.com" with default driver
+Creating volume "compose_peer2.org1.fedfab.com" with default driver
+Creating volume "compose_peer0.org2.fedfab.com" with default driver
+Creating peer0.org1.fedfab.com ... done
+Creating peer0.org2.fedfab.com ... done
+Creating peer1.org1.fedfab.com ... done
+Creating peer2.org1.fedfab.com ... done
+Creating orderer.fedfab.com    ... done
 Creating cli0                   ... done
 Creating cli3                   ... done
 Creating cli1                   ... done
@@ -411,16 +413,16 @@ d6a76f883fff   hyperledger/fabric-tools:latest     "/bin/bash"         3 seconds
 77b3a4f45dd7   hyperledger/fabric-tools:latest     "/bin/bash"         3 seconds ago   Up 2 seconds                                                                                                                                                 cli1
 cc967bbbffbc   hyperledger/fabric-tools:latest     "/bin/bash"         3 seconds ago   Up 2 seconds                                                                                                                                                 cli2
 4cac839a509e   hyperledger/fabric-tools:latest     "/bin/bash"         4 seconds ago   Up 2 seconds                                                                                                                                                 cli0
-dd8fb44841ed   hyperledger/fabric-peer:latest      "peer node start"   4 seconds ago   Exited (1) 2 seconds ago                                                                                                                                     peer1.org1.example.com
-37d044dc815b   hyperledger/fabric-peer:latest      "peer node start"   4 seconds ago   Exited (1) 3 seconds ago                                                                                                                                     peer2.org1.example.com
-c5d9572fd1b0   hyperledger/fabric-peer:latest      "peer node start"   4 seconds ago   Exited (1) 2 seconds ago                                                                                                                                     peer0.org2.example.com
-fa43da3532d7   hyperledger/fabric-orderer:latest   "orderer"           4 seconds ago   Up 3 seconds               0.0.0.0:7050->7050/tcp, :::7050->7050/tcp, 0.0.0.0:7053->7053/tcp, :::7053->7053/tcp, 0.0.0.0:9443->9443/tcp, :::9443->9443/tcp   orderer.example.com
-45b71846f669   hyperledger/fabric-peer:latest      "peer node start"   4 seconds ago   Exited (1) 3 seconds ago                                                                                                                                     peer0.org1.example.com
+dd8fb44841ed   hyperledger/fabric-peer:latest      "peer node start"   4 seconds ago   Exited (1) 2 seconds ago                                                                                                                                     peer1.org1.fedfab.com
+37d044dc815b   hyperledger/fabric-peer:latest      "peer node start"   4 seconds ago   Exited (1) 3 seconds ago                                                                                                                                     peer2.org1.fedfab.com
+c5d9572fd1b0   hyperledger/fabric-peer:latest      "peer node start"   4 seconds ago   Exited (1) 2 seconds ago                                                                                                                                     peer0.org2.fedfab.com
+fa43da3532d7   hyperledger/fabric-orderer:latest   "orderer"           4 seconds ago   Up 3 seconds               0.0.0.0:7050->7050/tcp, :::7050->7050/tcp, 0.0.0.0:7053->7053/tcp, :::7053->7053/tcp, 0.0.0.0:9443->9443/tcp, :::9443->9443/tcp   orderer.fedfab.com
+45b71846f669   hyperledger/fabric-peer:latest      "peer node start"   4 seconds ago   Exited (1) 3 seconds ago                                                                                                                                     peer0.org1.fedfab.com
 ```
 
 - 使用logs命令查看日志
 ```sh
-docker logs peer0.org1.example.com
+docker logs peer0.org1.fedfab.com
 2022-08-28 11:18:05.811 UTC 0001 ERRO [main] InitCmd -> Fatal error when initializing core config : FABRIC_CFG_PATH /etc/hyperledger/peercfg does not exist
 ```
 
@@ -439,11 +441,11 @@ eaa7a6ad0dc4   hyperledger/fabric-tools:latest     "/bin/bash"         4 seconds
 6cfcf59846eb   hyperledger/fabric-tools:latest     "/bin/bash"         5 seconds ago   Up 3 seconds                                                                                                                                     cli2
 29fe65400204   hyperledger/fabric-tools:latest     "/bin/bash"         5 seconds ago   Up 3 seconds                                                                                                                                     cli1
 4ac9037d3c2c   hyperledger/fabric-tools:latest     "/bin/bash"         5 seconds ago   Up 4 seconds                                                                                                                                     cli0
-a5e90a5b170a   hyperledger/fabric-peer:latest      "peer node start"   5 seconds ago   Up 4 seconds   7051/tcp, 0.0.0.0:9051->9051/tcp, :::9051->9051/tcp, 0.0.0.0:9447->9445/tcp, :::9447->9445/tcp                                    peer0.org2.example.com
-9b3b0f6445d2   hyperledger/fabric-peer:latest      "peer node start"   5 seconds ago   Up 4 seconds   0.0.0.0:9444->9444/tcp, :::9444->9444/tcp, 0.0.0.0:8051->7051/tcp, :::8051->7051/tcp                                              peer0.org1.example.com
-5d75a82337c8   hyperledger/fabric-peer:latest      "peer node start"   5 seconds ago   Up 4 seconds   0.0.0.0:8052->7051/tcp, :::8052->7051/tcp, 0.0.0.0:9445->9444/tcp, :::9445->9444/tcp                                              peer1.org1.example.com
-5eb7a92eb4e0   hyperledger/fabric-orderer:latest   "orderer"           5 seconds ago   Up 4 seconds   0.0.0.0:7050->7050/tcp, :::7050->7050/tcp, 0.0.0.0:7053->7053/tcp, :::7053->7053/tcp, 0.0.0.0:9443->9443/tcp, :::9443->9443/tcp   orderer.example.com
-17c6798b2dc9   hyperledger/fabric-peer:latest      "peer node start"   5 seconds ago   Up 4 seconds   0.0.0.0:8053->7051/tcp, :::8053->7051/tcp, 0.0.0.0:9446->9444/tcp, :::9446->9444/tcp                                              peer2.org1.example.com
+a5e90a5b170a   hyperledger/fabric-peer:latest      "peer node start"   5 seconds ago   Up 4 seconds   7051/tcp, 0.0.0.0:9051->9051/tcp, :::9051->9051/tcp, 0.0.0.0:9447->9445/tcp, :::9447->9445/tcp                                    peer0.org2.fedfab.com
+9b3b0f6445d2   hyperledger/fabric-peer:latest      "peer node start"   5 seconds ago   Up 4 seconds   0.0.0.0:9444->9444/tcp, :::9444->9444/tcp, 0.0.0.0:8051->7051/tcp, :::8051->7051/tcp                                              peer0.org1.fedfab.com
+5d75a82337c8   hyperledger/fabric-peer:latest      "peer node start"   5 seconds ago   Up 4 seconds   0.0.0.0:8052->7051/tcp, :::8052->7051/tcp, 0.0.0.0:9445->9444/tcp, :::9445->9444/tcp                                              peer1.org1.fedfab.com
+5eb7a92eb4e0   hyperledger/fabric-orderer:latest   "orderer"           5 seconds ago   Up 4 seconds   0.0.0.0:7050->7050/tcp, :::7050->7050/tcp, 0.0.0.0:7053->7053/tcp, :::7053->7053/tcp, 0.0.0.0:9443->9443/tcp, :::9443->9443/tcp   orderer.fedfab.com
+17c6798b2dc9   hyperledger/fabric-peer:latest      "peer node start"   5 seconds ago   Up 4 seconds   0.0.0.0:8053->7051/tcp, :::8053->7051/tcp, 0.0.0.0:9446->9444/tcp, :::9446->9444/tcp                                              peer2.org1.fedfab.com
 ```
 
 - 全部容器都已经启动成功！
@@ -479,8 +481,8 @@ function networkUp() {
 ```yaml
 version: '3.7'
 services:
-  peer0.org1.example.com:
-    container_name: peer0.org1.example.com
+  peer0.org1.fedfab.com:
+    container_name: peer0.org1.fedfab.com
     image: hyperledger/fabric-peer:latest
     labels:
       service: hyperledger-fabric
@@ -492,8 +494,8 @@ services:
       - ./docker/peercfg:/etc/hyperledger/peercfg
       - ${DOCKER_SOCK}:/host/var/run/docker.sock
 
-  peer0.org2.example.com:
-    container_name: peer0.org2.example.com
+  peer0.org2.fedfab.com:
+    container_name: peer0.org2.fedfab.com
     image: hyperledger/fabric-peer:latest
     labels:
       service: hyperledger-fabric
@@ -523,11 +525,11 @@ docker-compose up -d
 # 修改host文件
 ```sh
 sudo tee -a /etc/hosts <<-'EOF'
-127.0.0.1 orderer.example.com
-127.0.0.1 peer0.org1.example.com
-127.0.0.1 peer1.org1.example.com
-127.0.0.1 peer2.org1.example.com
-127.0.0.1 peer0.org2.example.com
+127.0.0.1 orderer.fedfab.com
+127.0.0.1 peer0.org1.fedfab.com
+127.0.0.1 peer1.org1.fedfab.com
+127.0.0.1 peer2.org1.fedfab.com
+127.0.0.1 peer0.org2.fedfab.com
 EOF
 cat /etc/hosts
 ```
@@ -554,10 +556,13 @@ go build
 ### 进入cli容器
 ```sh
 docker exec -it cli0 sh
+docker exec -it cli1 sh
+docker exec -it cli2 sh
+docker exec -it cli3 sh
 ```
 ### 安装通道
 ```sh
-peer channel create -o orderer.example.com:7050 -c channel1 -f ./channel-artifacts/channel1.tx --tls true --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/msp/tlscacerts/tlsca.example.com-cert.pem 
+peer channel create -o orderer.fedfab.com:7050 -c channel2 -f ./channel-artifacts/channel2.tx --tls true --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/fedfab.com/msp/tlscacerts/tlsca.fedfab.com-cert.pem 
 ```
 ```sh
 2022-08-29 08:31:23.202 UTC 0001 INFO [channelCmd] InitCmdFactory -> Endorser and orderer connections initialized
@@ -576,18 +581,18 @@ peer channel create -o orderer.example.com:7050 -c channel1 -f ./channel-artifac
 2022-08-29 08:31:24.434 UTC 000e INFO [cli.common] readBlock -> Received block: 0
 ```
 
-### 将生成的channel1.block复制到其他cli中
+### 将生成的channel2.block复制到其他cli中
 ```sh
-docker cp cli0:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel1.block ./
-docker cp ./channel1.block cli1:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel1.block
-docker cp ./channel1.block cli2:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel1.block
-docker cp ./channel1.block cli3:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel1.block
+docker cp cli0:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel2.block ./
+docker cp ./channel2.block cli1:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel2.block
+docker cp ./channel2.block cli2:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel2.block
+docker cp ./channel2.block cli3:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel2.block
 ```
 
 ### 加入channel
 分别进入四个cli，执行以下命令
 ```sh
-peer channel join -b ./channel1.block
+peer channel join -b ./channel2.block
 ```
 
 ```sh
@@ -599,15 +604,15 @@ peer channel join -b ./channel1.block
 
 |编号|端口配置|
 |-|-|
-|orderer.example.com|7050:7050, 7053:7053, 9443:9443|
-|peer0.org1.example.com|8051:8051, 9444:9444|
-|peer1.org1.example.com|8053:8053, 9445:9444|
-|peer2.org1.example.com|8055:8055, 9446:9444|
-|peer0.org2.example.com|9051:7051, 9447:9444|
+|orderer.fedfab.com|7050:7050, 7053:7053, 9443:9443|
+|peer0.org1.fedfab.com|8051:8051, 9444:9444|
+|peer1.org1.fedfab.com|8053:8053, 9445:9444|
+|peer2.org1.fedfab.com|8055:8055, 9446:9444|
+|peer0.org2.fedfab.com|9051:7051, 9447:9444|
 
 - 验证是否加入通道
 ```sh
-peer channel getinfo -c channel1
+peer channel getinfo -c channel2
 ```
 ```sh
 2022-08-29 09:28:21.265 UTC 0001 INFO [channelCmd] InitCmdFactory -> Endorser and orderer connections initialized
@@ -616,34 +621,36 @@ Blockchain info: {"height":1,"currentBlockHash":"xHaVldOzr0XQgw20tyMdri5No9dZuSQ
 ### 配置锚节点
 - 获取通道配置
 ```sh
-peer channel fetch config channel-artifacts/config_block.pb -o orderer.example.com:7050 -c channel1 --tls --cafile ${PWD}/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+peer channel fetch config channel-artifacts/config_block.pb -o orderer.fedfab.com:7050 -c channel2 --tls --cafile ${PWD}/crypto/ordererOrganizations/fedfab.com/orderers/orderer.fedfab.com/msp/tlscacerts/tlsca.fedfab.com-cert.pem
 cd channel-artifacts
 ```
 - pb文件转为json文件
 ```sh
 configtxlator proto_decode --input config_block.pb --type common.Block --output config_block.json
 jq .data.data[0].payload.data.config config_block.json > config.json
+cp config.json config_copy.json
 ```
 - 使用jq工具将Org1的Peer锚节点添加到通道配置中
 
 ```sh
-jq '.channel_group.groups.Application.groups.Org1MSP.values += {"AnchorPeers":{"mod_policy": "Admins","value":{"anchor_peers": [{"host": "peer0.org1.example.com","port": 8051}]},"version": "0"}}' config_copy.json > modified_config.json
+jq '.channel_group.groups.Application.groups.Org1MSP.values += {"AnchorPeers":{"mod_policy": "Admins","value":{"anchor_peers": [{"host": "peer0.org1.fedfab.com","port": 8051}]},"version": "0"}}' config_copy.json > modified_config.json
 ```
 - 完成此步骤后，我们在modified_config.json文件中以JSON格式获取了通道配置的更新版本。现在，我们可以将原始和修改的通道配置都转换回protobuf格式，并计算它们之间的差异。
 ```sh
 configtxlator proto_encode --input config.json --type common.Config --output config.pb
 configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb
-configtxlator compute_update --channel_id channel1 --original config.pb --updated modified_config.pb --output config_update.pb
+configtxlator compute_update --channel_id channel2 --original config.pb --updated modified_config.pb --output config_update.pb
 ```
 - 名为channel_update.pb的新的protobuf包含我们需要应用于通道配置的Peer锚节点更新。我们可以将配置更新包装在交易Envelope中，以创建通道配置更新交易。
 ```sh
 configtxlator proto_decode --input config_update.pb --type common.ConfigUpdate --output config_update.json
-echo '{"payload":{"header":{"channel_header":{"channel_id":"channel1", "type":2}},"data":{"config_update":'$(cat config_update.json)'}}}' | jq . > config_update_in_envelope.json
+echo '{"payload":{"header":{"channel_header":{"channel_id":"channel2", "type":2}},"data":{"config_update":'$(cat config_update.json)'}}}' | jq . > config_update_in_envelope.json
 configtxlator proto_encode --input config_update_in_envelope.json --type common.Envelope --output config_update_in_envelope.pb
 ```
 - 我们可以通过向peer channel update命令提供新的通道配置来添加Peer锚节点。因为我们正在更新仅影响Org1的部分通道配置，所以其他通道成员不需要批准通道更新。
 ```sh
-peer channel update -f channel-artifacts/config_update_in_envelope.pb -c channel1 -o orderer.example.com:7050 --tls --cafile ${PWD}/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
+cd ..
+peer channel update -f channel-artifacts/config_update_in_envelope.pb -c channel2 -o orderer.fedfab.com:7050 --tls --cafile ${PWD}/crypto/ordererOrganizations/fedfab.com/orderers/orderer.fedfab.com/msp/tlscacerts/tlsca.fedfab.com-cert.pem
 ```
 ```sh
 2022-08-29 09:47:17.178 UTC 0001 INFO [channelCmd] InitCmdFactory -> Endorser and orderer connections initialized
@@ -654,11 +661,9 @@ peer channel update -f channel-artifacts/config_update_in_envelope.pb -c channel
 
 - 验证已经更新
 ```sh
-peer channel getinfo -c channel1
+peer channel getinfo -c channel2
 ```
 ```sh
 Blockchain info: {"height":3,"currentBlockHash":"ScjYWX32DW8yvtDZ+DnLOljrFnHIjlCT2WbM2s19lF0=","previousBlockHash":"hTNOb9vIRm2sm8XPgrEsz33w/Ivc28MINV4Kn6ICXyU="}
 ```
 已经有三个块了
-
-## 运行链码
