@@ -562,7 +562,7 @@ docker exec -it cli3 sh
 ```
 ### 安装通道
 ```sh
-peer channel create -o orderer.fedfab.com:7050 -c channel2 -f ./channel-artifacts/channel2.tx --tls true --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/fedfab.com/msp/tlscacerts/tlsca.fedfab.com-cert.pem 
+peer channel create -o orderer.fedfab.com:7050 -c channel2 -f ./channel-artifacts/channel2.tx --tls true --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/fedfab.com/msp/tlscacerts/tlsca.fedfab.com-cert.pem
 ```
 ```sh
 2022-08-29 08:31:23.202 UTC 0001 INFO [channelCmd] InitCmdFactory -> Endorser and orderer connections initialized
