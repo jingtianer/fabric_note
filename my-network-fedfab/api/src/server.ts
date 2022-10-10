@@ -59,10 +59,7 @@ function onPostReceived(path:string, search:URLSearchParams, body:string):Promis
     }
     throw Error("No such Path")
 }
-let map = new Map([
-    ["key1", "value1"],
-    ["key2", "value2"]
-]); 
+
 // params : peer, org
 // body : json
 // {rid:"", cid:"", model:""}

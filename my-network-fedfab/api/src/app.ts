@@ -81,7 +81,7 @@ async function newSigner(currentPeer:Peer): Promise<Signer> {
 }
 
 async function get(funktion:string, contract: Contract, ...args: string[]): Promise<string> {
-    console.log('\n--> Evaluate Transaction: Invoke, function returns all the current assets on the ledger');
+    console.log(`\n--> Evaluate Transaction: ${funktion}, function returns all the current assets on the ledger`);
     const resultBytes = await contract.evaluate(funktion, { arguments: args });    
     const resultJson = utf8Decoder.decode(resultBytes);
     console.log('*** Result:', resultJson);
@@ -89,7 +89,7 @@ async function get(funktion:string, contract: Contract, ...args: string[]): Prom
 }
 
 async function set(funktion:string, contract: Contract, ...args: string[]): Promise<string> {
-    console.log('\n--> Evaluate Transaction: Invoke, function returns all the current assets on the ledger');
+    console.log(`\n--> Evaluate Transaction: ${funktion}, function returns all the current assets on the ledger`);
     const resultBytes = await contract.submit(funktion, { arguments: args });
     const resultJson = utf8Decoder.decode(resultBytes);
     console.log('*** Result:', resultJson);
